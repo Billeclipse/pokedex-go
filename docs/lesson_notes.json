@@ -1,0 +1,11 @@
+{
+  "project": "pokedex-go",
+  "title": "Pokedex Go Lessons",
+  "lessons": [
+    {
+      "number": 1,
+      "title": "Build",
+      "paragraph": "Lesson 1 creates the smallest working Go program for the project. The root main.go file belongs to package main and defines main(), which prints \"Hello, World!\" to the console. The project is initialized as the Go module pokedex-go, can be compiled with go build, and ignores the generated pokedex-go executable so build output does not get committed."
+    }
+  ]
+}
