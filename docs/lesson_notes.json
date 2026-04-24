@@ -6,6 +6,11 @@
       "number": 1,
       "title": "Build",
       "paragraph": "Lesson 1 creates the smallest working Go program for the project. The root main.go file belongs to package main and defines main(), which prints \"Hello, World!\" to the console. The project is initialized as the Go module pokedex-go, can be compiled with go build, and ignores the generated pokedex-go executable so build output does not get committed."
+    },
+    {
+      "number": 2,
+      "title": "Tests",
+      "paragraph": "Lesson 2 introduces test-driven development for cleanInput(text string) []string. The work began with a stub in repl.go and focused unit tests in repl_test.go covering whitespace trimming, splitting on any whitespace, lowercasing Pokemon names, tab and newline handling, and empty whitespace input; those tests failed against the stub before cleanInput was implemented with strings.TrimSpace, strings.ToLower, and strings.Fields. After formatting, go test ./..., go build, and running ./pokedex-go all passed."
     }
   ]
 }
