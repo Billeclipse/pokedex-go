@@ -11,6 +11,11 @@
       "number": 2,
       "title": "Tests",
       "paragraph": "Lesson 2 introduces test-driven development for cleanInput(text string) []string. The work began with a stub in repl.go and focused unit tests in repl_test.go covering whitespace trimming, splitting on any whitespace, lowercasing Pokemon names, tab and newline handling, and empty whitespace input; those tests failed against the stub before cleanInput was implemented with strings.TrimSpace, strings.ToLower, and strings.Fields. After formatting, go test ./..., go build, and running ./pokedex-go all passed."
+    },
+    {
+      "number": 3,
+      "title": "REPL",
+      "paragraph": "Lesson 3 replaces the one-time Hello World program with an interactive REPL entry point. main.go now calls startREPL(), which uses bufio.NewScanner(os.Stdin) to read each line, prints the prompt \"Pokedex > \", cleans input through cleanInput, ignores empty commands, and echoes the first word as \"Your command was: <command>\". The existing cleanInput tests still pass, the project formats, tests, and builds successfully, and a piped run confirmed that mixed-case Pokemon sentences are normalized to first-word commands like charmander and pikachu while repl.log remains ignored."
     }
   ]
 }
