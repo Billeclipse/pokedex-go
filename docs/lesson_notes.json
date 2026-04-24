@@ -16,6 +16,11 @@
       "number": 3,
       "title": "REPL",
       "paragraph": "Lesson 3 replaces the one-time Hello World program with an interactive REPL entry point. main.go now calls startREPL(), which uses bufio.NewScanner(os.Stdin) to read each line, prints the prompt \"Pokedex > \", cleans input through cleanInput, ignores empty commands, and echoes the first word as \"Your command was: <command>\". The existing cleanInput tests still pass, the project formats, tests, and builds successfully, and a piped run confirmed that mixed-case Pokemon sentences are normalized to first-word commands like charmander and pikachu while repl.log remains ignored."
+    },
+    {
+      "number": 4,
+      "title": "Help and Exit",
+      "paragraph": "Lesson 4 turns the REPL into a command-driven loop. repl.go now defines cliCommand with a name, description, and callback, getCommands() registers help and exit, and startREPL looks up the first cleaned word instead of echoing it, printing returned errors or Unknown command when no match exists. The help command prints a welcome message, usage text, and the stable command list, while exit prints \"Closing the Pokedex... Goodbye!\" before terminating; tests, build, and manual help, exit, and unknown-command runs all passed."
     }
   ]
 }
