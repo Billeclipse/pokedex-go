@@ -36,6 +36,11 @@
       "number": 7,
       "title": "Explore",
       "paragraph": "Lesson 7 adds an explore command that accepts a location area name and fetches the matching PokeAPI location-area detail endpoint. The REPL now passes cleaned command arguments to callbacks, the shared cached fetch helper is reused for both map pagination and exploration, and explore prints an \"Exploring <area>...\" header followed by the Pokemon encounter list. Tests still pass, the cache behavior is covered for exploration, and a manual run of explore canalave-city-area printed Pokemon such as tentacool, staryu, magikarp, and gyarados."
+    },
+    {
+      "number": 8,
+      "title": "Catch",
+      "paragraph": "Lesson 8 adds a catch command that accepts a Pokemon name, prints the Pokeball throw message, fetches Pokemon data from the PokeAPI Pokemon endpoint, and uses base experience with math/rand to decide whether the Pokemon is caught. The config now stores a Pokedex map of caught Pokemon, successful catches are added by name, and escaped Pokemon print a matching escape message. Tests cover cached Pokemon fetching and catch probability edge behavior, while manual repeated catch pikachu attempts showed both escaped and caught outcomes."
     }
   ]
 }

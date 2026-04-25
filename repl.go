@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"pokedex-go/internal/pokecache"
@@ -22,6 +23,7 @@ type config struct {
 	NextLocationAreaURL     string
 	PreviousLocationAreaURL string
 	Cache                   *pokecache.Cache
+	Pokedex                 map[string]Pokemon
 }
 
 type locationAreaResponse struct {
@@ -33,7 +35,13 @@ type locationAreaResponse struct {
 	} `json:"results"`
 }
 
+type Pokemon struct {
+	Name           string `json:"name"`
+	BaseExperience int    `json:"base_experience"`
+}
+
 const locationAreaURL = "https://pokeapi.co/api/v2/location-area"
+const pokemonURL = "https://pokeapi.co/api/v2/pokemon"
 
 var httpClient = http.Client{
 	Timeout: 10 * time.Second,
@@ -66,10 +74,15 @@ func getCommands() map[string]cliCommand {
 			description: "Displays Pokemon in a location area",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch",
+			description: "Attempts to catch a Pokemon",
+			callback:    commandCatch,
+		},
 	}
 }
 
-var commandOrder = []string{"help", "exit", "map", "mapb", "explore"}
+var commandOrder = []string{"help", "exit", "map", "mapb", "explore", "catch"}
 
 func startREPL() {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -77,6 +90,7 @@ func startREPL() {
 	cfg := config{
 		NextLocationAreaURL: locationAreaURL,
 		Cache:               pokecache.NewCache(5 * time.Second),
+		Pokedex:             make(map[string]Pokemon),
 	}
 
 	for {
@@ -144,6 +158,33 @@ func commandExplore(cfg *config, args []string) error {
 
 	areaName := args[0]
 	return fetchAndPrintPokemonInLocation(cfg, fmt.Sprintf("%s/%s", locationAreaURL, areaName), areaName)
+}
+
+func commandCatch(cfg *config, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("you must provide a pokemon name")
+	}
+
+	pokemonName := args[0]
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
+
+	pokemon, err := fetchPokemon(cfg, fmt.Sprintf("%s/%s", pokemonURL, pokemonName))
+	if err != nil {
+		return err
+	}
+
+	if cfg.Pokedex == nil {
+		cfg.Pokedex = make(map[string]Pokemon)
+	}
+
+	if wasCaught(pokemon) {
+		cfg.Pokedex[pokemon.Name] = pokemon
+		fmt.Printf("%s was caught!\n", pokemon.Name)
+		return nil
+	}
+
+	fmt.Printf("%s escaped!\n", pokemon.Name)
+	return nil
 }
 
 func fetchBody(cfg *config, url string) ([]byte, error) {
@@ -225,6 +266,29 @@ func fetchAndPrintPokemonInLocation(cfg *config, url string, areaName string) er
 	}
 
 	return nil
+}
+
+func fetchPokemon(cfg *config, url string) (Pokemon, error) {
+	body, err := fetchBody(cfg, url)
+	if err != nil {
+		return Pokemon{}, err
+	}
+
+	pokemon := Pokemon{}
+	if err := json.Unmarshal(body, &pokemon); err != nil {
+		return Pokemon{}, err
+	}
+
+	return pokemon, nil
+}
+
+func wasCaught(pokemon Pokemon) bool {
+	catchTarget := pokemon.BaseExperience
+	if catchTarget < 1 {
+		catchTarget = 1
+	}
+
+	return rand.Intn(catchTarget) < 50
 }
 
 func cleanInput(text string) []string {

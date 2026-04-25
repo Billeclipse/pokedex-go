@@ -127,3 +127,51 @@ func TestFetchAndPrintPokemonInLocationUsesCache(t *testing.T) {
 		t.Fatalf("expected 1 HTTP request, got %d", requests)
 	}
 }
+
+func TestFetchPokemonUsesCache(t *testing.T) {
+	var requests int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&requests, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"name": "pikachu",
+			"base_experience": 112
+		}`))
+	}))
+	defer server.Close()
+
+	oldClient := httpClient
+	httpClient = *server.Client()
+	defer func() {
+		httpClient = oldClient
+	}()
+
+	cfg := config{
+		Cache: pokecache.NewCache(time.Minute),
+	}
+
+	first, err := fetchPokemon(&cfg, server.URL)
+	if err != nil {
+		t.Fatalf("first fetch failed: %v", err)
+	}
+
+	second, err := fetchPokemon(&cfg, server.URL)
+	if err != nil {
+		t.Fatalf("second fetch failed: %v", err)
+	}
+
+	if first.Name != "pikachu" || second.Name != "pikachu" {
+		t.Fatalf("expected pikachu responses, got %q and %q", first.Name, second.Name)
+	}
+
+	if requests != 1 {
+		t.Fatalf("expected 1 HTTP request, got %d", requests)
+	}
+}
+
+func TestWasCaughtAlwaysCatchesZeroBaseExperience(t *testing.T) {
+	if !wasCaught(Pokemon{Name: "testmon", BaseExperience: 0}) {
+		t.Fatalf("expected pokemon with zero base experience to be caught")
+	}
+}
