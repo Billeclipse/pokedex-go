@@ -26,6 +26,11 @@
       "number": 5,
       "title": "PokeAPI",
       "paragraph": "Lesson 5 connects the REPL to real Pokemon world data through the PokeAPI location-area endpoint. Command callbacks now receive a config pointer that stores next and previous pagination URLs, map fetches and prints the next 20 location area names, and mapb either prints \"you're on the first page\" or fetches the previous page. The help registry includes map and mapb, go test ./... and go build pass, and manual REPL runs verified first-page results, forward pagination, backtracking, and the updated help output."
+    },
+    {
+      "number": 6,
+      "title": "Caching",
+      "paragraph": "Lesson 6 adds an internal pokecache package for concurrency-safe in-memory response caching. The cache stores raw response bytes by URL, copies values on add and get, protects the map with a mutex, and starts a ticker-backed reap loop that removes entries older than the configured interval. PokeAPI location-area requests now check the cache before making HTTP calls and store successful responses afterward; package tests cover add/get and expiration, and a REPL-level test confirms repeated fetches for the same URL only hit HTTP once."
     }
   ]
 }

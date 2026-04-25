@@ -1,6 +1,13 @@
 package main
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"pokedex-go/internal/pokecache"
+	"sync/atomic"
+	"testing"
+	"time"
+)
 
 func TestCleanInput(t *testing.T) {
 	cases := []struct {
@@ -37,5 +44,44 @@ func TestCleanInput(t *testing.T) {
 				t.Errorf("cleanInput(%q)[%d] = %q, expected %q", c.input, i, actual[i], c.expected[i])
 			}
 		}
+	}
+}
+
+func TestFetchAndPrintLocationAreasUsesCache(t *testing.T) {
+	var requests int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&requests, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"next": "https://example.com/next",
+			"previous": null,
+			"results": [
+				{"name": "test-area", "url": "https://example.com/location-area/1/"}
+			]
+		}`))
+	}))
+	defer server.Close()
+
+	oldClient := httpClient
+	httpClient = *server.Client()
+	defer func() {
+		httpClient = oldClient
+	}()
+
+	cfg := config{
+		Cache: pokecache.NewCache(time.Minute),
+	}
+
+	if err := fetchAndPrintLocationAreas(&cfg, server.URL); err != nil {
+		t.Fatalf("first fetch failed: %v", err)
+	}
+
+	if err := fetchAndPrintLocationAreas(&cfg, server.URL); err != nil {
+		t.Fatalf("second fetch failed: %v", err)
+	}
+
+	if requests != 1 {
+		t.Fatalf("expected 1 HTTP request, got %d", requests)
 	}
 }

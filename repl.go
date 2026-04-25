@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"pokedex-go/internal/pokecache"
 	"strings"
 	"time"
 )
@@ -20,6 +21,7 @@ type cliCommand struct {
 type config struct {
 	NextLocationAreaURL     string
 	PreviousLocationAreaURL string
+	Cache                   *pokecache.Cache
 }
 
 type locationAreaResponse struct {
@@ -69,6 +71,7 @@ func startREPL() {
 	commands := getCommands()
 	cfg := config{
 		NextLocationAreaURL: locationAreaURL,
+		Cache:               pokecache.NewCache(5 * time.Second),
 	}
 
 	for {
@@ -130,19 +133,28 @@ func commandMapb(cfg *config) error {
 }
 
 func fetchAndPrintLocationAreas(cfg *config, url string) error {
-	res, err := httpClient.Get(url)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode >= 400 {
-		return fmt.Errorf("request failed with status %s", res.Status)
+	if cfg.Cache == nil {
+		cfg.Cache = pokecache.NewCache(5 * time.Second)
 	}
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return err
+	body, ok := cfg.Cache.Get(url)
+	if !ok {
+		res, err := httpClient.Get(url)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode >= 400 {
+			return fmt.Errorf("request failed with status %s", res.Status)
+		}
+
+		body, err = io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		cfg.Cache.Add(url, body)
 	}
 
 	areas := locationAreaResponse{}
