@@ -21,6 +21,11 @@
       "number": 4,
       "title": "Help and Exit",
       "paragraph": "Lesson 4 turns the REPL into a command-driven loop. repl.go now defines cliCommand with a name, description, and callback, getCommands() registers help and exit, and startREPL looks up the first cleaned word instead of echoing it, printing returned errors or Unknown command when no match exists. The help command prints a welcome message, usage text, and the stable command list, while exit prints \"Closing the Pokedex... Goodbye!\" before terminating; tests, build, and manual help, exit, and unknown-command runs all passed."
+    },
+    {
+      "number": 5,
+      "title": "PokeAPI",
+      "paragraph": "Lesson 5 connects the REPL to real Pokemon world data through the PokeAPI location-area endpoint. Command callbacks now receive a config pointer that stores next and previous pagination URLs, map fetches and prints the next 20 location area names, and mapb either prints \"you're on the first page\" or fetches the previous page. The help registry includes map and mapb, go test ./... and go build pass, and manual REPL runs verified first-page results, forward pagination, backtracking, and the updated help output."
     }
   ]
 }
