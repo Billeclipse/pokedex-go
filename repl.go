@@ -15,7 +15,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(*config, []string) error
 }
 
 type config struct {
@@ -61,10 +61,15 @@ func getCommands() map[string]cliCommand {
 			description: "Displays the previous 20 location areas",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Displays Pokemon in a location area",
+			callback:    commandExplore,
+		},
 	}
 }
 
-var commandOrder = []string{"help", "exit", "map", "mapb"}
+var commandOrder = []string{"help", "exit", "map", "mapb", "explore"}
 
 func startREPL() {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -92,19 +97,19 @@ func startREPL() {
 			continue
 		}
 
-		if err := command.callback(&cfg); err != nil {
+		if err := command.callback(&cfg, words[1:]); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func commandExit(cfg *config) error {
+func commandExit(cfg *config, args []string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cfg *config) error {
+func commandHelp(cfg *config, args []string) error {
 	commands := getCommands()
 
 	fmt.Println("Welcome to the Pokedex!")
@@ -119,11 +124,11 @@ func commandHelp(cfg *config) error {
 	return nil
 }
 
-func commandMap(cfg *config) error {
+func commandMap(cfg *config, args []string) error {
 	return fetchAndPrintLocationAreas(cfg, cfg.NextLocationAreaURL)
 }
 
-func commandMapb(cfg *config) error {
+func commandMapb(cfg *config, args []string) error {
 	if cfg.PreviousLocationAreaURL == "" {
 		fmt.Println("you're on the first page")
 		return nil
@@ -132,29 +137,49 @@ func commandMapb(cfg *config) error {
 	return fetchAndPrintLocationAreas(cfg, cfg.PreviousLocationAreaURL)
 }
 
-func fetchAndPrintLocationAreas(cfg *config, url string) error {
+func commandExplore(cfg *config, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("you must provide a location area name")
+	}
+
+	areaName := args[0]
+	return fetchAndPrintPokemonInLocation(cfg, fmt.Sprintf("%s/%s", locationAreaURL, areaName), areaName)
+}
+
+func fetchBody(cfg *config, url string) ([]byte, error) {
 	if cfg.Cache == nil {
 		cfg.Cache = pokecache.NewCache(5 * time.Second)
 	}
 
 	body, ok := cfg.Cache.Get(url)
-	if !ok {
-		res, err := httpClient.Get(url)
-		if err != nil {
-			return err
-		}
-		defer res.Body.Close()
+	if ok {
+		return body, nil
+	}
 
-		if res.StatusCode >= 400 {
-			return fmt.Errorf("request failed with status %s", res.Status)
-		}
+	res, err := httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
 
-		body, err = io.ReadAll(res.Body)
-		if err != nil {
-			return err
-		}
+	if res.StatusCode >= 400 {
+		return nil, fmt.Errorf("request failed with status %s", res.Status)
+	}
 
-		cfg.Cache.Add(url, body)
+	body, err = io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.Cache.Add(url, body)
+
+	return body, nil
+}
+
+func fetchAndPrintLocationAreas(cfg *config, url string) error {
+	body, err := fetchBody(cfg, url)
+	if err != nil {
+		return err
 	}
 
 	areas := locationAreaResponse{}
@@ -167,6 +192,36 @@ func fetchAndPrintLocationAreas(cfg *config, url string) error {
 
 	for _, area := range areas.Results {
 		fmt.Println(area.Name)
+	}
+
+	return nil
+}
+
+type locationAreaDetail struct {
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+}
+
+func fetchAndPrintPokemonInLocation(cfg *config, url string, areaName string) error {
+	body, err := fetchBody(cfg, url)
+	if err != nil {
+		return err
+	}
+
+	area := locationAreaDetail{}
+	if err := json.Unmarshal(body, &area); err != nil {
+		return err
+	}
+
+	fmt.Printf("Exploring %s...\n", areaName)
+	fmt.Println("Found Pokemon:")
+
+	for _, encounter := range area.PokemonEncounters {
+		fmt.Printf(" - %s\n", encounter.Pokemon.Name)
 	}
 
 	return nil

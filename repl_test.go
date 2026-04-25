@@ -85,3 +85,45 @@ func TestFetchAndPrintLocationAreasUsesCache(t *testing.T) {
 		t.Fatalf("expected 1 HTTP request, got %d", requests)
 	}
 }
+
+func TestFetchAndPrintPokemonInLocationUsesCache(t *testing.T) {
+	var requests int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&requests, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"pokemon_encounters": [
+				{
+					"pokemon": {
+						"name": "pikachu",
+						"url": "https://example.com/pokemon/25/"
+					}
+				}
+			]
+		}`))
+	}))
+	defer server.Close()
+
+	oldClient := httpClient
+	httpClient = *server.Client()
+	defer func() {
+		httpClient = oldClient
+	}()
+
+	cfg := config{
+		Cache: pokecache.NewCache(time.Minute),
+	}
+
+	if err := fetchAndPrintPokemonInLocation(&cfg, server.URL, "test-area"); err != nil {
+		t.Fatalf("first fetch failed: %v", err)
+	}
+
+	if err := fetchAndPrintPokemonInLocation(&cfg, server.URL, "test-area"); err != nil {
+		t.Fatalf("second fetch failed: %v", err)
+	}
+
+	if requests != 1 {
+		t.Fatalf("expected 1 HTTP request, got %d", requests)
+	}
+}

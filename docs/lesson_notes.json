@@ -31,6 +31,11 @@
       "number": 6,
       "title": "Caching",
       "paragraph": "Lesson 6 adds an internal pokecache package for concurrency-safe in-memory response caching. The cache stores raw response bytes by URL, copies values on add and get, protects the map with a mutex, and starts a ticker-backed reap loop that removes entries older than the configured interval. PokeAPI location-area requests now check the cache before making HTTP calls and store successful responses afterward; package tests cover add/get and expiration, and a REPL-level test confirms repeated fetches for the same URL only hit HTTP once."
+    },
+    {
+      "number": 7,
+      "title": "Explore",
+      "paragraph": "Lesson 7 adds an explore command that accepts a location area name and fetches the matching PokeAPI location-area detail endpoint. The REPL now passes cleaned command arguments to callbacks, the shared cached fetch helper is reused for both map pagination and exploration, and explore prints an \"Exploring <area>...\" header followed by the Pokemon encounter list. Tests still pass, the cache behavior is covered for exploration, and a manual run of explore canalave-city-area printed Pokemon such as tentacool, staryu, magikarp, and gyarados."
     }
   ]
 }
