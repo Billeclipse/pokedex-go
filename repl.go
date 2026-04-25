@@ -38,6 +38,19 @@ type locationAreaResponse struct {
 type Pokemon struct {
 	Name           string `json:"name"`
 	BaseExperience int    `json:"base_experience"`
+	Height         int    `json:"height"`
+	Weight         int    `json:"weight"`
+	Stats          []struct {
+		BaseStat int `json:"base_stat"`
+		Stat     struct {
+			Name string `json:"name"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Type struct {
+			Name string `json:"name"`
+		} `json:"type"`
+	} `json:"types"`
 }
 
 const locationAreaURL = "https://pokeapi.co/api/v2/location-area"
@@ -79,10 +92,15 @@ func getCommands() map[string]cliCommand {
 			description: "Attempts to catch a Pokemon",
 			callback:    commandCatch,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "Displays details for caught Pokemon",
+			callback:    commandInspect,
+		},
 	}
 }
 
-var commandOrder = []string{"help", "exit", "map", "mapb", "explore", "catch"}
+var commandOrder = []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"}
 
 func startREPL() {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -184,6 +202,34 @@ func commandCatch(cfg *config, args []string) error {
 	}
 
 	fmt.Printf("%s escaped!\n", pokemon.Name)
+	return nil
+}
+
+func commandInspect(cfg *config, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("you must provide a pokemon name")
+	}
+
+	pokemon, ok := cfg.Pokedex[args[0]]
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats:")
+
+	for _, stat := range pokemon.Stats {
+		fmt.Printf("  -%s: %d\n", stat.Stat.Name, stat.BaseStat)
+	}
+
+	fmt.Println("Types:")
+	for _, pokemonType := range pokemon.Types {
+		fmt.Printf("  - %s\n", pokemonType.Type.Name)
+	}
+
 	return nil
 }
 

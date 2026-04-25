@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"pokedex-go/internal/pokecache"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -136,7 +139,15 @@ func TestFetchPokemonUsesCache(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
 			"name": "pikachu",
-			"base_experience": 112
+			"base_experience": 112,
+			"height": 4,
+			"weight": 60,
+			"stats": [
+				{"base_stat": 35, "stat": {"name": "hp"}}
+			],
+			"types": [
+				{"type": {"name": "electric"}}
+			]
 		}`))
 	}))
 	defer server.Close()
@@ -174,4 +185,102 @@ func TestWasCaughtAlwaysCatchesZeroBaseExperience(t *testing.T) {
 	if !wasCaught(Pokemon{Name: "testmon", BaseExperience: 0}) {
 		t.Fatalf("expected pokemon with zero base experience to be caught")
 	}
+}
+
+func TestCommandInspectPrintsCaughtPokemon(t *testing.T) {
+	cfg := config{
+		Pokedex: map[string]Pokemon{
+			"pidgey": {
+				Name:   "pidgey",
+				Height: 3,
+				Weight: 18,
+				Stats: []struct {
+					BaseStat int `json:"base_stat"`
+					Stat     struct {
+						Name string `json:"name"`
+					} `json:"stat"`
+				}{
+					{
+						BaseStat: 40,
+						Stat: struct {
+							Name string `json:"name"`
+						}{
+							Name: "hp",
+						},
+					},
+				},
+				Types: []struct {
+					Type struct {
+						Name string `json:"name"`
+					} `json:"type"`
+				}{
+					{
+						Type: struct {
+							Name string `json:"name"`
+						}{
+							Name: "normal",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	output := captureStdout(t, func() {
+		if err := commandInspect(&cfg, []string{"pidgey"}); err != nil {
+			t.Fatalf("inspect failed: %v", err)
+		}
+	})
+
+	for _, expected := range []string{
+		"Name: pidgey",
+		"Height: 3",
+		"Weight: 18",
+		"Stats:",
+		"  -hp: 40",
+		"Types:",
+		"  - normal",
+	} {
+		if !strings.Contains(output, expected) {
+			t.Fatalf("expected output to contain %q, got:\n%s", expected, output)
+		}
+	}
+}
+
+func TestCommandInspectPrintsMissingPokemonMessage(t *testing.T) {
+	cfg := config{
+		Pokedex: map[string]Pokemon{},
+	}
+
+	output := captureStdout(t, func() {
+		if err := commandInspect(&cfg, []string{"pidgey"}); err != nil {
+			t.Fatalf("inspect failed: %v", err)
+		}
+	})
+
+	if !strings.Contains(output, "you have not caught that pokemon") {
+		t.Fatalf("expected missing pokemon message, got:\n%s", output)
+	}
+}
+
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+
+	oldStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe failed: %v", err)
+	}
+
+	os.Stdout = writer
+	fn()
+	_ = writer.Close()
+	os.Stdout = oldStdout
+
+	var buffer bytes.Buffer
+	if _, err := buffer.ReadFrom(reader); err != nil {
+		t.Fatalf("read stdout failed: %v", err)
+	}
+
+	return buffer.String()
 }

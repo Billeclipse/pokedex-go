@@ -41,6 +41,11 @@
       "number": 8,
       "title": "Catch",
       "paragraph": "Lesson 8 adds a catch command that accepts a Pokemon name, prints the Pokeball throw message, fetches Pokemon data from the PokeAPI Pokemon endpoint, and uses base experience with math/rand to decide whether the Pokemon is caught. The config now stores a Pokedex map of caught Pokemon, successful catches are added by name, and escaped Pokemon print a matching escape message. Tests cover cached Pokemon fetching and catch probability edge behavior, while manual repeated catch pikachu attempts showed both escaped and caught outcomes."
+    },
+    {
+      "number": 9,
+      "title": "Inspect",
+      "paragraph": "Lesson 9 adds an inspect command that reads details only from Pokemon already stored in the user's Pokedex. The Pokemon model now keeps height, weight, stats, and types from the catch response, so inspecting a caught Pokemon does not require another API call. Uncaught Pokemon print \"you have not caught that pokemon\", while caught Pokemon print the name, dimensions, stats, and type list; tests cover both paths and a manual pidgey session matched the expected output."
     }
   ]
 }
