@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"pokedex-go/internal/pokecache"
+	"sort"
 	"strings"
 	"time"
 )
@@ -97,10 +98,15 @@ func getCommands() map[string]cliCommand {
 			description: "Displays details for caught Pokemon",
 			callback:    commandInspect,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Displays caught Pokemon",
+			callback:    commandPokedex,
+		},
 	}
 }
 
-var commandOrder = []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"}
+var commandOrder = []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect", "pokedex"}
 
 func startREPL() {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -198,6 +204,7 @@ func commandCatch(cfg *config, args []string) error {
 	if wasCaught(pokemon) {
 		cfg.Pokedex[pokemon.Name] = pokemon
 		fmt.Printf("%s was caught!\n", pokemon.Name)
+		fmt.Println("You may now inspect it with the inspect command.")
 		return nil
 	}
 
@@ -228,6 +235,22 @@ func commandInspect(cfg *config, args []string) error {
 	fmt.Println("Types:")
 	for _, pokemonType := range pokemon.Types {
 		fmt.Printf("  - %s\n", pokemonType.Type.Name)
+	}
+
+	return nil
+}
+
+func commandPokedex(cfg *config, args []string) error {
+	fmt.Println("Your Pokedex:")
+
+	names := make([]string, 0, len(cfg.Pokedex))
+	for name := range cfg.Pokedex {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		fmt.Printf(" - %s\n", name)
 	}
 
 	return nil

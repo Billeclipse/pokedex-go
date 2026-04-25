@@ -263,6 +263,26 @@ func TestCommandInspectPrintsMissingPokemonMessage(t *testing.T) {
 	}
 }
 
+func TestCommandPokedexPrintsCaughtPokemon(t *testing.T) {
+	cfg := config{
+		Pokedex: map[string]Pokemon{
+			"pidgey":   {Name: "pidgey"},
+			"caterpie": {Name: "caterpie"},
+		},
+	}
+
+	output := captureStdout(t, func() {
+		if err := commandPokedex(&cfg, nil); err != nil {
+			t.Fatalf("pokedex failed: %v", err)
+		}
+	})
+
+	expected := "Your Pokedex:\n - caterpie\n - pidgey\n"
+	if output != expected {
+		t.Fatalf("expected output %q, got %q", expected, output)
+	}
+}
+
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
 

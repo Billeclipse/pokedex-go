@@ -46,6 +46,11 @@
       "number": 9,
       "title": "Inspect",
       "paragraph": "Lesson 9 adds an inspect command that reads details only from Pokemon already stored in the user's Pokedex. The Pokemon model now keeps height, weight, stats, and types from the catch response, so inspecting a caught Pokemon does not require another API call. Uncaught Pokemon print \"you have not caught that pokemon\", while caught Pokemon print the name, dimensions, stats, and type list; tests cover both paths and a manual pidgey session matched the expected output."
+    },
+    {
+      "number": 10,
+      "title": "Pokedex",
+      "paragraph": "Lesson 10 adds a pokedex command that prints the names of Pokemon stored in the user's caught-Pokemon map. Successful catches now also tell the user they may inspect the Pokemon with the inspect command, and the Pokedex output uses a stable sorted order for deterministic tests and readable output. Tests cover the printed list, and a manual session caught pidgey and caterpie before printing both names under the \"Your Pokedex:\" heading."
     }
   ]
 }
